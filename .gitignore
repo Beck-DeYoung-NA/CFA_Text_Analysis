@@ -2,3 +2,5 @@
 *.csv
 .Rproj.user/
 .Rproj.user\
+.Rproj.user
+**/lightning_logs/

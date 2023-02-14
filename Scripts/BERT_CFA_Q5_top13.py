@@ -407,10 +407,4 @@ torch.save(QTmodel.state_dict(), 'U:/computer/Python BERT/CFA data/BERT_saved_mo
 #https://stackoverflow.com/questions/59340061/saving-a-fine-tuned-bert-model
 #https://mccormickml.com/2019/07/22/BERT-fine-tuning/#advantages-of-fine-tuning
 
-# %% 
-# %%
-import subprocess
-res = subprocess.call('Rscript ./reshapeQ5.R 13 5 "073022"', shell=True)
-res
-
 # %%
