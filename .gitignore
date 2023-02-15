@@ -3,4 +3,5 @@
 .Rproj.user/
 .Rproj.user\
 .Rproj.user
+**/__pycache__/
 **/lightning_logs/

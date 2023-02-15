@@ -1,6 +1,5 @@
 
 # Huggingface transformers
-import transformers
 from transformers import BertModel,AdamW, get_linear_schedule_with_warmup
 
 import torch
@@ -8,6 +7,9 @@ from torch import nn
 from torch.utils.data import DataLoader,Dataset
 
 import pytorch_lightning as pl
+
+from typing import List
+import numpy as np
 
 #Setup the Multi-label Classifier Model - dervived from LightningModule , similar to nn.module of PyTorch
 class QTagClassifier(pl.LightningModule):
@@ -38,7 +40,7 @@ class QTagClassifier(pl.LightningModule):
         loss = self.criterion(outputs,labels)
         self.log('train_loss',loss , prog_bar=True,logger=True)
         
-        return {"loss" :loss, "predictions":outputs, "labels": labels }
+        return {"loss" :loss, "predictions": outputs, "labels": labels }
 
 
     def validation_step(self,batch,batch_idx):
@@ -48,7 +50,7 @@ class QTagClassifier(pl.LightningModule):
         
         outputs = self(input_ids,attention_mask)
         loss = self.criterion(outputs,labels)
-        self.log('val_loss',loss , prog_bar=True,logger=True)
+        self.log('val_loss', loss, prog_bar=True,logger=True)
         
         return loss
 
@@ -59,7 +61,7 @@ class QTagClassifier(pl.LightningModule):
         
         outputs = self(input_ids,attention_mask)
         loss = self.criterion(outputs,labels)
-        self.log('test_loss',loss , prog_bar=True,logger=True)
+        self.log('test_loss', loss, prog_bar=True,logger=True)
         
         return loss
     
@@ -114,7 +116,7 @@ class QTagDataset (Dataset):
     
 class QTagDataModule (pl.LightningDataModule):
     
-    def __init__(self,x_tr,y_tr,x_val,y_val,x_test,y_test,tokenizer,batch_size=16,max_token_len=200):
+    def __init__(self,x_tr: List[str],y_tr: np.ndarray,x_val: List[str],y_val: np.ndarray,x_test: List[str],y_test: np.ndarray,tokenizer,batch_size=16,max_token_len=200):
         super().__init__()
         self.tr_text = x_tr
         self.tr_label = y_tr
@@ -136,7 +138,7 @@ class QTagDataModule (pl.LightningDataModule):
         return DataLoader (self.train_dataset,batch_size = self.batch_size,shuffle = True , num_workers=0)
 
     def val_dataloader(self):
-        return DataLoader (self.val_dataset,batch_size= 16)
+        return DataLoader (self.val_dataset,batch_size= 16, num_workers=0)
 
     def test_dataloader(self):
-        return DataLoader (self.test_dataset,batch_size= 16)
+        return DataLoader (self.test_dataset,batch_size= 16, num_workers=0)

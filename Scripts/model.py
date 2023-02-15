@@ -1,4 +1,6 @@
 # %%
+# Load the TensorBoard notebook extension
+# %load_ext tensorboard
 import pandas as pd
 import numpy as np
 import torch
@@ -7,27 +9,28 @@ import re
 import os
 
 from transformers import BertTokenizer
+import transformers
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch.utils.data import DataLoader,Dataset,RandomSampler, SequentialSampler
 
 from bert_classes import QTagClassifier, QTagDataset, QTagDataModule
 from prep_data import load_data, prep_question
+from analysis import plot_word_freq
 
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.model_selection import train_test_split
 
 # %%
 RANDOM_SEED = 42
-np.random.seed(RANDOM_SEED)
-torch.manual_seed(RANDOM_SEED)
+pl.seed_everything(RANDOM_SEED, workers=True)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 QUESTION = 5
 NUM_CODES = 13
 DATE = "073022"
-N_EPOCHS = 12
-BATCH_SIZE = 32
+N_EPOCHS = 2
+BATCH_SIZE = 300
 MAX_LEN = 300
 LR = 2e-05
 BERT_MODEL_NAME = "bert-base-cased"
@@ -43,25 +46,16 @@ print(f'Num samples for training and testing: {len(x)}')
 mlb = MultiLabelBinarizer()
 yt = mlb.fit_transform(y)
 # %%
-# # compute no. of words in each question
-# word_cnt = [len(quest.split()) for quest in x]
-# # Plot the distribution
-# plt.figure(figsize=[8,5])
-# plt.hist(word_cnt, bins = 40)
-# plt.xlabel('Word Count/Question')
-# plt.ylabel('# of Occurrences')
-# plt.title("Frequency of Word Counts/sentence")
-# plt.show()
+if False: plot_word_freq(x)
 # %%
 x_train, x_test = x, x
 y_train, y_test = yt, yt
 x_tr,x_val,y_tr,y_val = train_test_split(x_train, y_train, test_size=0.3, random_state=RANDOM_SEED,shuffle=True)
 # %%
 # Initialize the Bert tokenizer
-Bert_tokenizer = BertTokenizer.from_pretrained(BERT_MODEL_NAME)
-
+Bert_tokenizer: BertTokenizer = BertTokenizer.from_pretrained(BERT_MODEL_NAME)
 def tokenize_encode(sentence):
-    return Bert_tokenizer.encode(sentence, add_special_tokens=True)
+    return Bert_tokenizer.encode(sentence, add_special_tokens=True, max_length=512, truncation=True)
 
 qs_above_max = len([q for q in x if len(tokenize_encode(q)) > MAX_WORD_COUNT])
 print(f'# Question having word count > {MAX_WORD_COUNT}: is  {qs_above_max}')
@@ -86,21 +80,20 @@ checkpoint_callback = ModelCheckpoint(
 )
 
 # %%
-trainer = pl.Trainer(max_epochs = N_EPOCHS , callbacks=[checkpoint_callback])
+trainer = pl.Trainer(max_epochs = N_EPOCHS ,accelerator = 'cpu', callbacks=[checkpoint_callback], log_every_n_steps=10)
 # Train the Classifier Model
+# %%
+print('training')
 trainer.fit(model, QTdata_module)
 # Evaluate the model performance on the test dataset
+# %%
 trainer.test(model,datamodule=QTdata_module)
 # Visualize the logs using tensorboard.
-#%load_ext tensorboard
-#%tensorboard --logdir lightning_logs/
+# %load_ext tensorboard
+# %tensorboard --logdir lightning_logs/
 #Evaluate Model Performance on Test Set
 # Retreive the checkpoint path for best model
 model_path = checkpoint_callback.best_model_path
-model_path
+print(model_path)
 len(y_test), len(x_test)
 #setup test dataset for BERT
-# %%
-
-DataLoader()
-Dataset()
